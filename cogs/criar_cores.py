@@ -2,107 +2,114 @@ import discord
 from discord.ext import commands
 
 SERVIDOR_ORIGEM_ID = 1486183507519865024
-SERVIDOR_DESTINO_ID = 1484060471555264633
+SERVIDOR_DESTINO_ID = 1538601853632118877
 
 
 class CriarCores(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def encontrar_guild(self, guild_id):
+        for guild in self.bot.guilds:
+            if guild.id == guild_id:
+                return guild
+        return None
+
     @commands.command()
     async def debug_core(self, ctx):
-        origem = self.bot.get_guild(SERVIDOR_ORIGEM_ID)
-        destino = self.bot.get_guild(SERVIDOR_DESTINO_ID)
+        msg = "📊 **DEBUG — SERVIDORES DO BOT**\n\n"
+        msg += f"Total: `{len(self.bot.guilds)}`\n\n"
 
-        msg = "📊 **DEBUG**\n\n"
-        msg += f"Origem encontrada: {origem is not None}\n"
-        msg += f"Destino encontrado: {destino is not None}\n"
+        encontrou_origem = False
+        encontrou_destino = False
 
-        if origem:
-            msg += f"Servidor origem: {origem.name}\n"
-            msg += f"Cargos na origem: {len(origem.roles)}\n"
+        for guild in self.bot.guilds:
+            marcador = ""
 
-        if destino:
-            msg += f"Servidor destino: {destino.name}\n"
-            msg += f"Cargos no destino: {len(destino.roles)}\n"
+            if guild.id == SERVIDOR_ORIGEM_ID:
+                marcador = " ⬅️ **ORIGEM**"
+                encontrou_origem = True
 
-            bot_member = destino.get_member(self.bot.user.id)
+            if guild.id == SERVIDOR_DESTINO_ID:
+                marcador = " ⬅️ **DESTINO**"
+                encontrou_destino = True
 
-            if bot_member:
-                msg += (
-                    f"Gerenciar cargos: "
-                    f"{bot_member.guild_permissions.manage_roles}\n"
-                )
-                msg += (
-                    f"Cargo mais alto do bot: "
-                    f"{bot_member.top_role.name}\n"
-                )
+            msg += (
+                f"**{guild.name}**\n"
+                f"🆔 `{guild.id}`{marcador}\n\n"
+            )
 
-        await ctx.send(msg)
+            if len(msg) >= 1800:
+                await ctx.send(msg)
+                msg = ""
+
+        if msg:
+            await ctx.send(msg)
+
+        await ctx.send(
+            "🔎 **RESULTADO**\n\n"
+            f"📥 Origem: `{encontrou_origem}`\n"
+            f"📤 Destino: `{encontrou_destino}`"
+        )
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def copiarcores(self, ctx):
-        origem = self.bot.get_guild(SERVIDOR_ORIGEM_ID)
-        destino = self.bot.get_guild(SERVIDOR_DESTINO_ID)
 
-        if not origem:
+        origem = self.encontrar_guild(SERVIDOR_ORIGEM_ID)
+        destino = self.encontrar_guild(SERVIDOR_DESTINO_ID)
+
+        if origem is None:
             return await ctx.send(
-                "❌ Bot não está no servidor de origem."
+                f"❌ Não encontrei a origem `{SERVIDOR_ORIGEM_ID}`."
             )
 
-        if not destino:
+        if destino is None:
             return await ctx.send(
-                "❌ Bot não está no servidor de destino."
+                f"❌ Não encontrei o destino `{SERVIDOR_DESTINO_ID}`.\n"
+                f"Use `.debug_core` para ver os servidores."
             )
 
         bot_member = destino.get_member(self.bot.user.id)
 
-        if not bot_member:
+        if bot_member is None:
             return await ctx.send(
-                "❌ Não consegui encontrar o bot no servidor de destino."
+                "❌ O bot está no servidor, mas não consegui "
+                "encontrar o membro do bot dentro dele."
             )
 
         if not bot_member.guild_permissions.manage_roles:
             return await ctx.send(
-                "❌ O bot não possui permissão de **Gerenciar Cargos**."
+                "❌ O bot não possui **Gerenciar Cargos**."
             )
 
         await ctx.send(
-            f"⏳ Copiando cargos de **{origem.name}**..."
+            f"⏳ Copiando cargos de **{origem.name}** "
+            f"para **{destino.name}**..."
         )
 
         cargos_criados = []
 
-        # Pega os cargos da origem na ordem original
         for role in origem.roles:
 
-            # Ignora @everyone
             if role.is_default():
                 continue
 
-            # Ignora cargos sem cor
             if role.color.value == 0:
                 continue
 
             try:
-                nome_original = role.name
+                nome = role.name
 
-                # Procura pelo "✦" no cargo da ORIGEM
-                if nome_original.startswith("✦ "):
-                    nome_limpo = nome_original[2:]
-                elif nome_original.startswith("✦"):
-                    nome_limpo = nome_original[1:].strip()
-                else:
-                    nome_limpo = nome_original
+                # Remove ✦ apenas da origem
+                if nome.startswith("✦ "):
+                    nome = nome[2:]
+                elif nome.startswith("✦"):
+                    nome = nome[1:].strip()
 
-                # Nome que será criado no DESTINO
-                novo_nome = f"【🎨】 {nome_limpo}"
+                novo_nome = f"【🎨】 {nome}"[:100]
 
-                # Limite máximo de caracteres do Discord
-                novo_nome = novo_nome[:100]
-
-                novo_cargo = await destino.create_role(
+                novo = await destino.create_role(
                     name=novo_nome,
                     color=role.color,
                     hoist=role.hoist,
@@ -110,73 +117,10 @@ class CriarCores(commands.Cog):
                     reason="Cópia de cargos coloridos"
                 )
 
-                cargos_criados.append(novo_cargo)
-
-                print(
-                    f"[COPIAR CORES] "
-                    f"{role.name} -> {novo_cargo.name}"
-                )
-
-            except discord.Forbidden:
-                print(
-                    f"[ERRO] Sem permissão para criar: {role.name}"
-                )
-
-            except discord.HTTPException as e:
-                print(
-                    f"[ERRO DISCORD] {role.name}: {e}"
-                )
+                cargos_criados.append(novo)
 
             except Exception as e:
-                print(
-                    f"[ERRO] {role.name}: {e}"
-                )
-
-        # Reorganiza os cargos criados para manter
-        # aproximadamente a mesma ordem da origem.
-        if cargos_criados:
-
-            try:
-                for i, cargo in enumerate(cargos_criados):
-                    try:
-                        await cargo.edit(
-                            position=i + 1,
-                            reason="Organizando cargos copiados"
-                        )
-
-                    except discord.Forbidden:
-                        print(
-                            f"[ERRO] Não foi possível mover: "
-                            f"{cargo.name}"
-                        )
-
-                    except discord.HTTPException as e:
-                        print(
-                            f"[ERRO AO MOVER] "
-                            f"{cargo.name}: {e}"
-                        )
-
-            except Exception as e:
-                print(
-                    f"[ERRO ORGANIZANDO] {e}"
-                )
-
-        # Envia os cargos criados em mensagens separadas
-        if cargos_criados:
-
-            texto = "🎨 **Cargos criados:**\n\n"
-
-            for cargo in cargos_criados:
-                entrada = f"{cargo.mention} "
-
-                if len(texto) + len(entrada) > 1900:
-                    await ctx.send(texto)
-                    texto = ""
-
-                texto += entrada
-
-            if texto:
-                await ctx.send(texto)
+                print(f"[ERRO] {role.name}: {e}")
 
         await ctx.send(
             f"✅ **{len(cargos_criados)} cargos criados!**"
