@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_command
+from discord import app_commands
 
 # IDs fornecidos
 ROLE_ID = 1538708137748594799   # ID do cargo que o usuário ganhará
@@ -643,10 +643,4 @@ class Verification(commands.Cog):
                     )
 
                     # Adiciona 1 convite ao convidador
-                    await self.update_user_invites(
-                        inviter_id,
-                        1
-                    )
-
-                    # Atualiza cache
-                 
+                    await self.upda
