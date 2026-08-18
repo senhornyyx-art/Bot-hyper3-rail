@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_command
 
 # IDs fornecidos
 ROLE_ID = 1538708137748594799   # ID do cargo que o usuário ganhará
