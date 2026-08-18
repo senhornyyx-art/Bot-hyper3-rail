@@ -164,7 +164,6 @@ class Verification(commands.Cog):
                 upsert=True
             )
             print(f"💾 Indicação Registrada: Membro {member_id} convidado por {inviter_id}")
-
         except Exception as e:
             print(f"❌ Erro ao definir indicação no MongoDB: {e}")
 
@@ -242,7 +241,7 @@ class Verification(commands.Cog):
                     
                     print(f"🎉 Convite correspondido! {member.name} entrou usando o convite de {inviter_id}.")
                     
-                    # Atualiza o banco de dados
+                    # Atualiza o banco de dados (chamadas agora sem await interno nas funções)
                     await self.set_referred_by(member_id, inviter_id)
                     await self.update_user_invites(inviter_id, 1)
                     
