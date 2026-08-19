@@ -69,7 +69,7 @@ class VerificationView(discord.ui.LayoutView):
             ),
 
             # BORDA LATERAL DO CONTAINER
-            accent_color=discord.Color.from_str("#d42e4c")
+            accent_color=discord.Color.from_str("#3F4147")
         )
 
         self.add_item(container)
