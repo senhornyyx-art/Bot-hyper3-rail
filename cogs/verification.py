@@ -30,8 +30,8 @@ class VerificationView(discord.ui.LayoutView):
             discord.ui.Separator(),
 
             discord.ui.TextDisplay(
-                """## <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas (editores ou não)\n"
-            "> - Convide 2 pessoas usando seu convite. Ao atingir a meta, clique no botão \"Validar verificação\".\n\n"
+                """## <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas\n"
+            "> - Convide 2 pessoas usando seu convite. (podem ser editores ou não.) Ao atingir a meta, clique no botão \"Validar verificação\".\n\n"
             "## <:topicopen:1526287216954052719> <:verify:1526360202197209128> Após verificar:\n"
             "> - 📦 Acesso aos Presets & Project Files (AE & AMZ)\n"
             "> - 🎬 Recursos de edição: CC's, Packs, Fontes, Overlays, Clipes, Músicas e muito mais recursos premium.\n"
