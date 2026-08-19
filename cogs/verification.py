@@ -30,16 +30,16 @@ class VerificationView(discord.ui.LayoutView):
             discord.ui.Separator(),
 
             discord.ui.TextDisplay(
-                """## <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas\n"
-            "> - Convide 2 pessoas usando seu convite. (podem ser editores ou não.) Ao atingir a meta, clique no botão \"Validar verificação\".\n\n"
-            "## <:topicopen:1526287216954052719> <:verify:1526360202197209128> Após verificar:\n"
-            "> - 📦 Acesso aos Presets & Project Files (AE & AMZ)\n"
-            "> - 🎬 Recursos de edição: CC's, Packs, Fontes, Overlays, Clipes, Músicas e muito mais recursos premium.\n"
-            "> - 🛠️ Suporte completo para editores.\n\n"
-            "## <:topicopen:1526287216954052719> <:__:1526354605028413440> Como ver seus convites:\n"
-            "> - Clique em \"Meus convites\" para ver seu progresso.\n"
-            "> - Clique em \"Criar convite\" para gerar seu próprio link.\n\n"
-            "-# <:prints:1526358671691612200> Tire suas dúvidas no tópico abaixo. O suporte é voluntário; aguarde sem mencionar a Staff."""
+                """## <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas\n
+                > - Convide 2 pessoas usando seu convite. (podem ser editores ou não.) Ao atingir a meta, clique no botão \"Validar verificação\".\n\n"
+            ## <:topicopen:1526287216954052719> <:verify:1526360202197209128> Após verificar:\n
+            > - 📦 Acesso aos Presets & Project Files (AE & AMZ)\n
+            > - 🎬 Recursos de edição: CC's, Packs, Fontes, Overlays, Clipes, Músicas e muito mais recursos premium.\n
+            > - 🛠️ Suporte completo para editores.\n
+            ## <:topicopen:1526287216954052719> <:__:1526354605028413440> Como ver seus convites:\n
+            > - Clique em \"Meus convites\" para ver seu progresso.\n
+            > - Clique em \"Criar convite\" para gerar seu próprio link.\n
+            -# <:prints:1526358671691612200> Tire suas dúvidas no tópico abaixo. O suporte é voluntário; aguarde sem mencionar a Staff."""
             ),
 
             discord.ui.Separator(),
