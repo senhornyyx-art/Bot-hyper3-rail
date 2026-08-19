@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_command
+from discord import app_commands
 # IDs fornecidos
 ROLE_ID = 1538708137748594799   # ID do cargo que o usuário ganhará
 CHANNEL_ID = 1539108037120229486  # ID do canal onde o painel será enviado
