@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -643,4 +644,83 @@ class Verification(commands.Cog):
                     )
 
                     # Adiciona 1 convite ao convidador
-                    await self.upda
+                    await self.update_user_invites(
+                        inviter_id,
+                        1
+                    )
+
+                    self.invite_cache[
+                        invite.code
+                    ]["uses"] = invite.uses
+
+                    break
+
+        except discord.Forbidden:
+            print(
+                f"❌ Sem permissão para ler convites no evento de entrada de {member.name}."
+            )
+        except Exception as e:
+            print(
+                f"❌ Erro no processamento do evento on_member_join: {e}"
+            )
+
+    # =========================================================
+    # MEMBRO SAIU
+    # =========================================================
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+
+        if member.guild.id != GUILD_ID:
+            return
+
+        inviter_id = await self.remove_referred_by(member.id)
+
+        if inviter_id:
+            await self.update_user_invites(
+                inviter_id,
+                -1
+            )
+
+            print(
+                f"📉 Membro {member.name} saiu do servidor. "
+                f"1 convite removido de {inviter_id}."
+            )
+
+    # =========================================================
+    # COMANDO SLASH: /setup_verificacao
+    # =========================================================
+
+    @app_commands.command(
+        name="setup_verificacao",
+        description="Envia o painel de verificação no canal configurado."
+    )
+    @app_commands.default_permissions(administrator=True)
+    async def setup_verificacao(self, interaction: discord.Interaction):
+        if interaction.guild_id != GUILD_ID:
+            await interaction.response.send_message(
+                "❌ | Este comando não pode ser executado neste servidor.",
+                ephemeral=True
+            )
+            return
+
+        channel = interaction.guild.get_channel(CHANNEL_ID)
+
+        if not channel:
+            await interaction.response.send_message(
+                f"❌ | Canal com ID `{CHANNEL_ID}` não foi encontrado.",
+                ephemeral=True
+            )
+            return
+
+        view = VerificationView(self.bot)
+        await channel.send(view=view)
+
+        await interaction.response.send_message(
+            f"✅ | Painel de verificação enviado com sucesso em {channel.mention}!",
+            ephemeral=True
+        )
+
+
+async def setup(bot):
+    await bot.add_cog(Verification(bot))
