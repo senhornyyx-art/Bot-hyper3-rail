@@ -1,4 +1,4 @@
-import discord
+Import discord
 from discord.ext import commands
 from discord.ui import View, Button, Select
 
@@ -9,7 +9,7 @@ from discord.ui import View, Button, Select
 def get_cores(guild):
     return [
         r for r in reversed(guild.roles)
-        if r.name.startswith("✦") and not r.managed
+        if r.name.startswith("【🎨】") and not r.managed
     ]
 
 
@@ -35,7 +35,7 @@ class MainPanel(View):
         view = ColorPanel(interaction.guild)
 
         await interaction.response.send_message(
-            "🎨 Abrindo seletor de cores...",
+            "Abrindo seletor de cores...",
             view=view,
             ephemeral=True
         )
@@ -82,12 +82,15 @@ class ColorPanel(View):
         # SELECT
         # =========================
         select = Select(
-            placeholder="🎨 Escolha sua cor",
+            placeholder="Escolha sua cor",
             custom_id="cores:select"
         )
 
         select.options = [
-            discord.SelectOption(label=r.name[:100], value=str(r.id))
+            discord.SelectOption(
+                label=(r.name if r.name.startswith("【🎨】") else f"【🎨】 {r.name}")[:100],
+                value=str(r.id)
+            )
             for r in pagina
         ] if pagina else [
             discord.SelectOption(label="Nenhuma cor", value="0")
@@ -209,7 +212,7 @@ class ConfirmReset(View):
                 await interaction.user.remove_roles(r)
 
         await interaction.response.edit_message(
-            content="🧹 | Suas cores foram removidas!",
+            content="✅ | Suas cores foram removidas!",
             view=None
         )
 
@@ -250,3 +253,4 @@ class Cores(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Cores(bot))
+                   
