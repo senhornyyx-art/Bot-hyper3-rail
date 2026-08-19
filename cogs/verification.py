@@ -30,7 +30,7 @@ class VerificationView(discord.ui.LayoutView):
             discord.ui.Separator(),
 
             discord.ui.TextDisplay(
-                """# <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas (editores ou não)
+                """# <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas
 > - Convide 2 pessoas usando seu convite. Ao atingir a meta, clique no botão "Validar verificação".
 # <:topicopen:1526287216954052719> <:verify:1526360202197209128> Após verificar:
 
@@ -40,7 +40,7 @@ class VerificationView(discord.ui.LayoutView):
 # <:topicopen:1526287216954052719> <:__:1526354605028413440> Como ver seus convites:
 > - Clique em "Meus convites" para ver seu progresso.
 > - Clique em "Criar convite" para gerar seu próprio link.
--# <:prints:1526358671691612200> Tire dúvidas no tópico abaixo. O suporte é voluntário; aguarde sem mencionar a Staff."""
+-# <:prints:1526358671691612200> Se necessário, anexe prints como prova ou tire dúvidas no tópico abaixo, o suporte e as respostas a sua dúvida é voluntário, não perturbe mencionando membros da Staff, tenha paciência e aguarde."""
             ),
 
             discord.ui.Separator(),
@@ -308,10 +308,8 @@ class VerificationView(discord.ui.LayoutView):
             await interaction.response.send_message(
                 "❌ | Não consegui criar o convite.",
                 ephemeral=True
-            )
-
-
-class Verification(commands.Cog):
+        )
+        class Verification(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -646,4 +644,81 @@ class Verification(commands.Cog):
                     await self.update_user_invites(
                         inviter_id,
                         1
-            
+                    )
+
+                    self.invite_cache[
+                        invite.code
+                    ]["uses"] = invite.uses
+
+                    break
+
+        except discord.Forbidden:
+            print(
+                f"❌ Sem permissão para ler convites no evento de entrada de {member.name}."
+            )
+        except Exception as e:
+            print(
+                f"❌ Erro no processamento do evento on_member_join: {e}"
+            )
+
+    # =========================================================
+    # MEMBRO SAIU
+    # =========================================================
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+
+        if member.guild.id != GUILD_ID:
+            return
+
+        inviter_id = await self.remove_referred_by(member.id)
+
+        if inviter_id:
+            await self.update_user_invites(
+                inviter_id,
+                -1
+            )
+
+            print(
+                f"📉 Membro {member.name} saiu do servidor. "
+                f"1 convite removido de {inviter_id}."
+            )
+
+    # =========================================================
+    # COMANDO SLASH: /setup_verificacao
+    # =========================================================
+
+    @app_commands.command(
+        name="setup_verificacao",
+        description="Envia o painel de verificação no canal configurado."
+    )
+    @app_commands.default_permissions(administrator=True)
+    async def setup_verificacao(self, interaction: discord.Interaction):
+        if interaction.guild_id != GUILD_ID:
+            await interaction.response.send_message(
+                "❌ | Este comando não pode ser executado neste servidor.",
+                ephemeral=True
+            )
+            return
+
+        channel = interaction.guild.get_channel(CHANNEL_ID)
+
+        if not channel:
+            await interaction.response.send_message(
+                f"❌ | Canal com ID `{CHANNEL_ID}` não foi encontrado.",
+                ephemeral=True
+            )
+            return
+
+        view = VerificationView(self.bot)
+        await channel.send(view=view)
+
+        await interaction.response.send_message(
+            f"✅ | Painel de verificação enviado com sucesso em {channel.mention}!",
+            ephemeral=True
+        )
+
+
+async def setup(bot):
+    await bot.add_cog(Verification(bot))
+    
