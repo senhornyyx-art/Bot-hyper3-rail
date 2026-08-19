@@ -30,16 +30,17 @@ class VerificationView(discord.ui.LayoutView):
             discord.ui.Separator(),
 
             discord.ui.TextDisplay(
-                """## <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas (editores ou não)\n"
-            "> - Convide 2 pessoas usando seu convite. Ao atingir a meta, clique no botão \"Validar verificação\".\n\n"
-            "## <:topicopen:1526287216954052719> <:verify:1526360202197209128> Após verificar:\n"
-            "> - 📦 Acesso aos Presets & Project Files (AE & AMZ)\n"
-            "> - 🎬 Recursos de edição: CC's, Packs, Fontes, Overlays, Clipes, Músicas e muito mais recursos premium.\n"
-            "> - 🛠️ Suporte completo para editores.\n\n"
-            "## <:topicopen:1526287216954052719> <:__:1526354605028413440> Como ver seus convites:\n"
-            "> - Clique em \"Meus convites\" para ver seu progresso.\n"
-            "> - Clique em \"Criar convite\" para gerar seu próprio link.\n\n"
-            "-# <:prints:1526358671691612200> Tire suas dúvidas no tópico abaixo. O suporte é voluntário; aguarde sem mencionar a Staff."""
+                """# <:topic1:1526287141775343656> <:convite:1526352250837143552> Convide 2 pessoas
+> - Convide 2 pessoas usando seu convite. Ao atingir a meta, clique no botão "Validar verificação".
+# <:topicopen:1526287216954052719> <:verify:1526360202197209128> Após verificar:
+
+> - 📦 Acesso aos Presets & Project Files (AE & AMZ)
+> - 🎬 Recursos de edição: CC's, Packs, Fontes, Overlays, Clipes, Músicas e muito mais recursos premium.
+> - 🛠️ Suporte completo para editores.
+# <:topicopen:1526287216954052719> <:__:1526354605028413440> Como ver seus convites:
+> - Clique em "Meus convites" para ver seu progresso.
+> - Clique em "Criar convite" para gerar seu próprio link.
+-# <:prints:1526358671691612200> Se necessário, anexe prints como prova ou tire dúvidas no tópico abaixo, o suporte e as respostas a sua dúvida é voluntário, não perturbe mencionando membros da Staff, tenha paciência e aguarde."""
             ),
 
             discord.ui.Separator(),
@@ -307,8 +308,10 @@ class VerificationView(discord.ui.LayoutView):
             await interaction.response.send_message(
                 "❌ | Não consegui criar o convite.",
                 ephemeral=True
-        )
-        class Verification(commands.Cog):
+            )
+
+
+class Verification(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -720,4 +723,3 @@ class VerificationView(discord.ui.LayoutView):
 
 async def setup(bot):
     await bot.add_cog(Verification(bot))
-    
