@@ -8,7 +8,7 @@ import time
 # CONFIGURAÇÕES
 # =========================================================
 
-ROLE_ID = 1538708137748594799
+ROLE_ID = 1539680631066206328
 CHANNEL_ID = 1539108037120229486
 GUILD_ID = 1538601853632118877
 
@@ -57,7 +57,7 @@ PORTUGUESE_TEXT = """# <:topic1:1526287141775343656> <:convite:15263522508371435
 # =========================================================
 
 ENGLISH_TEXT = """# <:topic1:1526287141775343656> <:convite:1526352250837143552> Invite 2 people
-> - Invite 2 people using your invite and once you reach the goal, click "Verify".
+> - Invite 2 people using your invite and once you reach the goal, click "Validate Verification".
 # <:topicopen:1526287216954052719> <:verify:1526360202197209128> Benefits:
 > - 🎁 Presets, Project Files & software (After Effects, Alight Motion, After Motion Z)
 > - 💻 CC's, Packs, Fonts, Overlays, Clips, Music and many more editing resources in all styles.
@@ -91,11 +91,11 @@ class EnglishVerificationView(discord.ui.LayoutView):
             discord.ui.Separator(),
             discord.ui.TextDisplay(
                 "## <:book:1539496360061968484> **What should I do?**\n"
-                "> Use the buttons below to check your invites, create your invite link, or verify your account once you reach **2 validated invites**."
+                "> Use the buttons below to check your invites, create your invite link, or to validate the verification. your account once you reach **2 validated invites**."
             ),
             discord.ui.Separator(),
             discord.ui.ActionRow(
-                discord.ui.Button(label="Verify", style=discord.ButtonStyle.green, custom_id="english_verify_btn", emoji=discord.PartialEmoji.from_str(EMOJI_VERIFY)),
+                discord.ui.Button(label="Validate Verification", style=discord.ButtonStyle.green, custom_id="english_verify_btn", emoji=discord.PartialEmoji.from_str(EMOJI_VERIFY)),
                 discord.ui.Button(label="My Invites", style=discord.ButtonStyle.blurple, custom_id="english_my_invites_btn", emoji=discord.PartialEmoji.from_str(EMOJI_CONVITE)),
                 discord.ui.Button(label="Create Invite", style=discord.ButtonStyle.gray, custom_id="english_create_invite_btn", emoji="🔗")
             ),
@@ -131,7 +131,7 @@ class EnglishVerificationView(discord.ui.LayoutView):
             await interaction.followup.send(f"❌ | You need 2 validated invites. You currently have **{count}/2**.", ephemeral=True); return
         try:
             await member.add_roles(role)
-            await interaction.followup.send(f"{EMOJI_VERIFY} | **Verification completed!** You invited {count} people and received the **{role.name}** role.", ephemeral=True)
+            await interaction.followup.send(f"{EMOJI_VERIFY} | **Verification completed!** You invited {count} people and received the **{role.mention}** role.", ephemeral=True)
         except discord.Forbidden:
             await interaction.followup.send("❌ | I do not have permission to manage roles. Make sure my role is above the verification role.", ephemeral=True)
         except Exception as e:
@@ -613,7 +613,7 @@ class VerificationView(discord.ui.LayoutView):
                 await interaction.followup.send(
                     f"{EMOJI_VERIFY} | **Verificação concluída!** "
                     f"Você convidou {invites_count} pessoas e recebeu "
-                    f"o cargo **{role.name}**.",
+                    f"o cargo **{role.mention}**.",
                     ephemeral=True
                 )
 
