@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import time
 
+
 # =========================================================
 # CONFIGURAÇÕES
 # =========================================================
@@ -14,7 +15,13 @@ GUILD_ID = 1538601853632118877
 # ID DO TÓPICO
 THREAD_ID = 1539497894816514120
 
-IMAGE_URL = "https://cdn.discordapp.com/attachments/1538601853632118877/1539405747538890812/UQjECAI.png?ex=6a8632d2&is=6a84e152&hm=aacfad9292ca73220b574db55e6b67707c913196c4b6a8fcc488b80c826b6460&"
+# URL SEM OS PARÂMETROS TEMPORÁRIOS DO CDN
+IMAGE_URL = (
+    "https://cdn.discordapp.com/attachments/"
+    "1538601853632118877/"
+    "1539405747538890812/"
+    "UQjECAI.png"
+)
 
 EMOJI_CONVITE = "<:convite:1526352250837143552>"
 EMOJI_VERIFY = "<:verify:1526360202197209128>"
@@ -22,8 +29,9 @@ EMOJI_VERIFY = "<:verify:1526360202197209128>"
 ENGLISH_BUTTON_ID = "english_verification_btn"
 
 # =========================================================
-# COOLDOWN DO BOTÃO ENGLISH
-# 2 HORAS
+# COOLDOWN
+# SOMENTE PARA ENVIO DA MENSAGEM NO TÓPICO
+# O CONTAINER EPHEMERAL NÃO POSSUI COOLDOWN
 # =========================================================
 
 ENGLISH_COOLDOWN = 2 * 60 * 60
@@ -44,11 +52,11 @@ PORTUGUESE_TEXT = """# <:topic1:1526287141775343656> <:convite:15263522508371435
 # <:topicopen:1526287216954052719> <:__:1526354605028413440> Como ver seus convites:
 > - Clique em "Meus convites" para acompanhar seu progresso. Observação: para validar a pessoa precisa entrar no servidor.
 > - Clique em "Criar convite" para gerar seu link de convite e enviar para duas pessoas.
--# <:prints:1526358671691612200> Dúvidas ou problemas com a verificação? Anexe prints como provas, ou tire sua dúvida no tópico abaixo. O suporte é voluntáriado, então aguarde com paciência."""
+-# <:prints:1526358671691612200> Dúvidas ou problemas com a verificação? Anexe prints como provas, ou tire sua dúvida no tópico abaixo. O suporte é voluntariado, então aguarde com paciência."""
 
 
 # =========================================================
-# TEXTO INGLÊS DO PAINEL
+# TEXTO INGLÊS — CONTAINER EPHEMERAL
 # =========================================================
 
 ENGLISH_TEXT = """# <:topic1:1526287141775343656> <:convite:1526352250837143552> Invite 2 people
@@ -64,13 +72,13 @@ ENGLISH_TEXT = """# <:topic1:1526287141775343656> <:convite:1526352250837143552>
 
 
 # =========================================================
-# TEXTO ENVIADO NO TÓPICO
+# TEXTO QUE SERÁ ENVIADO NO TÓPICO
 # =========================================================
 
-ENGLISH_THREAD_TEXT = """## <:book:1539496360061968484> **・ Use this thread correctly:**
+THREAD_ENGLISH_TEXT = """## <:book:1539496360061968484> **・ Use this thread correctly:**
 * **Use this thread** to **ask questions, comment or discuss** the invite system.
 * **The invited person must join** the server for the invite to be validated during verification.
-* **Avoid messages unrelated to the topic** to keep the thread organized."""
+* **Avoid off-topic messages** to keep the thread organized."""
 
 
 # =========================================================
@@ -204,190 +212,14 @@ class VerificationView(discord.ui.LayoutView):
         user = interaction.user
         user_id = user.id
 
-        agora = time.monotonic()
-
-        ultimo_clique = english_cooldowns.get(
-            user_id,
-            0
-        )
-
         # =================================================
-        # COOLDOWN DE 2 HORAS
+        # CONTAINER EPHEMERAL
+        #
+        # ESTE SEMPRE APARECE.
+        # NÃO É AFETADO PELO COOLDOWN.
         # =================================================
-
-        if agora - ultimo_clique < ENGLISH_COOLDOWN:
-
-            restante = (
-                ENGLISH_COOLDOWN
-                - (
-                    agora
-                    - ultimo_clique
-                )
-            )
-
-            horas = int(
-                restante // 3600
-            )
-
-            minutos = int(
-                (
-                    restante % 3600
-                ) // 60
-            )
-
-            segundos = int(
-                restante % 60
-            )
-
-            if horas > 0:
-
-                tempo = f"{horas}h"
-
-                if minutos:
-                    tempo += (
-                        f" {minutos}min"
-                    )
-
-            elif minutos > 0:
-
-                tempo = (
-                    f"{minutos}min"
-                )
-
-                if segundos:
-                    tempo += (
-                        f" {segundos}s"
-                    )
-
-            else:
-
-                tempo = (
-                    f"{segundos}s"
-                )
-
-            await interaction.response.send_message(
-                (
-                    "⏳ | You need to wait "
-                    f"**{tempo}** before requesting "
-                    "the instructions again."
-                ),
-                ephemeral=True
-            )
-
-            return
-
-        # =================================================
-        # REGISTRA O CLIQUE
-        # =================================================
-
-        english_cooldowns[user_id] = agora
-
-        await interaction.response.defer(
-            ephemeral=True
-        )
 
         try:
-
-            # =================================================
-            # BUSCA O TÓPICO
-            # =================================================
-
-            thread = self.bot.get_channel(
-                THREAD_ID
-            )
-
-            if not thread:
-
-                try:
-
-                    thread = await self.bot.fetch_channel(
-                        THREAD_ID
-                    )
-
-                except Exception as e:
-
-                    print(
-                        "❌ Não foi possível encontrar "
-                        f"o tópico: {e}"
-                    )
-
-                    english_cooldowns.pop(
-                        user_id,
-                        None
-                    )
-
-                    await interaction.followup.send(
-                        (
-                            "❌ | I couldn't find "
-                            "the instructions thread."
-                        ),
-                        ephemeral=True
-                    )
-
-                    return
-
-            # =================================================
-            # CONFIRMA SE É UM TÓPICO
-            # =================================================
-
-            if not isinstance(
-                thread,
-                discord.Thread
-            ):
-
-                print(
-                    "❌ O THREAD_ID configurado "
-                    "não corresponde a um tópico."
-                )
-
-                english_cooldowns.pop(
-                    user_id,
-                    None
-                )
-
-                await interaction.followup.send(
-                    (
-                        "❌ | The configured "
-                        "instructions channel is "
-                        "not a thread."
-                    ),
-                    ephemeral=True
-                )
-
-                return
-
-            # =================================================
-            # 1 — MANDA A MENÇÃO SEPARADAMENTE
-            # =================================================
-
-            await thread.send(
-                user.mention
-            )
-
-            # =================================================
-            # 2 — MONTA A MENSAGEM DO TÓPICO
-            #
-            # O REQUESTED BY JÁ NASCE NA MENSAGEM.
-            # NÃO É EDITADO DEPOIS.
-            # =================================================
-
-            mensagem_ingles = (
-                ENGLISH_THREAD_TEXT
-                + "\n"
-                + f"-# Requested by: {user.name}"
-            )
-
-            # =================================================
-            # 3 — ENVIA AS INSTRUÇÕES NO TÓPICO
-            # =================================================
-
-            await thread.send(
-                mensagem_ingles
-            )
-
-            # =================================================
-            # 4 — INSTRUÇÕES EM EPHEMERAL
-            # =================================================
 
             english_container = discord.ui.Container(
 
@@ -401,51 +233,224 @@ class VerificationView(discord.ui.LayoutView):
             )
 
             english_view = discord.ui.LayoutView(
-                timeout=None
+                timeout=180
             )
 
             english_view.add_item(
                 english_container
             )
 
-            await interaction.followup.send(
+            await interaction.response.send_message(
                 view=english_view,
-                ephemeral=True
-            )
-
-        except discord.Forbidden:
-
-            english_cooldowns.pop(
-                user_id,
-                None
-            )
-
-            await interaction.followup.send(
-                (
-                    "❌ | I don't have permission "
-                    "to send messages in this thread."
-                ),
                 ephemeral=True
             )
 
         except Exception as e:
 
-            english_cooldowns.pop(
-                user_id,
-                None
+            print(
+                f"❌ Erro ao enviar container em inglês: {e}"
             )
+
+            try:
+
+                await interaction.response.send_message(
+                    ENGLISH_TEXT,
+                    ephemeral=True
+                )
+
+            except Exception as fallback_error:
+
+                print(
+                    f"❌ Erro no fallback do container: "
+                    f"{fallback_error}"
+                )
+
+                return
+
+        # =================================================
+        # VERIFICA COOLDOWN SOMENTE AGORA
+        #
+        # O CONTAINER ACIMA JÁ FOI ENVIADO.
+        # =================================================
+
+        agora = time.monotonic()
+
+        ultimo_clique = english_cooldowns.get(
+            user_id,
+            0
+        )
+
+        tempo_passado = (
+            agora - ultimo_clique
+        )
+
+        if tempo_passado < ENGLISH_COOLDOWN:
+
+            restante = int(
+                ENGLISH_COOLDOWN
+                - tempo_passado
+            )
+
+            horas = restante // 3600
+
+            minutos = (
+                restante % 3600
+            ) // 60
+
+            segundos = restante % 60
+
+            if horas > 0:
+
+                tempo = f"{horas}h"
+
+                if minutos > 0:
+                    tempo += f" {minutos}min"
+
+            elif minutos > 0:
+
+                tempo = f"{minutos}min"
+
+                if segundos > 0:
+                    tempo += f" {segundos}s"
+
+            else:
+
+                tempo = f"{segundos}s"
+
+            # O AVISO É EM INGLÊS E EPHEMERAL.
+            try:
+
+                await interaction.followup.send(
+                    f"⏳ | Please wait **{tempo}** before "
+                    f"requesting the instructions in the "
+                    f"thread again.",
+                    ephemeral=True
+                )
+
+            except Exception as e:
+
+                print(
+                    f"❌ Erro ao enviar cooldown: {e}"
+                )
+
+            return
+
+        # =================================================
+        # A PARTIR DAQUI É PERMITIDO ENVIAR NO TÓPICO
+        # =================================================
+
+        english_cooldowns[
+            user_id
+        ] = agora
+
+        # =================================================
+        # BUSCAR TÓPICO
+        # =================================================
+
+        try:
+
+            thread = self.bot.get_channel(
+                THREAD_ID
+            )
+
+            if not thread:
+
+                thread = await self.bot.fetch_channel(
+                    THREAD_ID
+                )
+
+            # =================================================
+            # MENÇÃO SEPARADA
+            #
+            # A MENÇÃO É ENVIADA PRIMEIRO PARA GERAR O PING.
+            # DEPOIS É APAGADA IMEDIATAMENTE.
+            # =================================================
+
+            mention_message = await thread.send(
+                user.mention
+            )
+
+            try:
+
+                await mention_message.delete()
+
+            except discord.NotFound:
+
+                pass
+
+            except discord.Forbidden:
+
+                print(
+                    "⚠️ Não tenho permissão para apagar "
+                    "a mensagem de menção."
+                )
+
+            except Exception as e:
+
+                print(
+                    f"⚠️ Erro ao apagar mensagem de menção: "
+                    f"{e}"
+                )
+
+            # =================================================
+            # MENSAGEM DO TÓPICO
+            #
+            # REQUESTED BY JÁ NASCE JUNTO.
+            # NÃO EXISTE EDIÇÃO POSTERIOR.
+            # =================================================
+
+            mensagem_ingles = (
+                THREAD_ENGLISH_TEXT
+                + "\n\n"
+                + f"-# Requested by: {user.name}"
+            )
+
+            await thread.send(
+                mensagem_ingles
+            )
+
+        except discord.Forbidden:
 
             print(
-                "❌ Erro no botão "
-                f"English Instructions: {e}"
+                "❌ Não tenho permissão para enviar "
+                "mensagens no tópico."
             )
 
-            await interaction.followup.send(
-                (
-                    "❌ | I couldn't send "
-                    "the instructions."
-                ),
-                ephemeral=True
+            # Como o container já foi enviado, o aviso
+            # precisa ser followup.
+            try:
+
+                await interaction.followup.send(
+                    "❌ | I don't have permission to send "
+                    "messages in this thread.",
+                    ephemeral=True
+                )
+
+            except Exception as e:
+
+                print(
+                    f"❌ Erro ao enviar aviso de permissão: {e}"
+                )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao enviar instruções no tópico: {e}"
+            )
+
+            try:
+
+                await interaction.followup.send(
+                    "❌ | The thread instructions "
+                    "could not be sent.",
+                    ephemeral=True
+                )
+
+            except Exception as followup_error:
+
+                print(
+                    f"❌ Erro no followup: "
+                    f"{followup_error}"
             )
 
     # =====================================================
@@ -470,11 +475,7 @@ class VerificationView(discord.ui.LayoutView):
         ):
 
             await interaction.followup.send(
-                (
-                    "❌ | Este sistema de "
-                    "verificação não funciona "
-                    "neste servidor."
-                ),
+                "❌ | Este sistema de verificação não funciona neste servidor.",
                 ephemeral=True
             )
 
@@ -487,11 +488,7 @@ class VerificationView(discord.ui.LayoutView):
         if not role:
 
             await interaction.followup.send(
-                (
-                    "❌ | O cargo de verificação "
-                    "não foi encontrado. "
-                    "Contate um administrador."
-                ),
+                "❌ | O cargo de verificação não foi encontrado. Contate um administrador.",
                 ephemeral=True
             )
 
@@ -500,10 +497,7 @@ class VerificationView(discord.ui.LayoutView):
         if role in member.roles:
 
             await interaction.followup.send(
-                (
-                    f"{EMOJI_VERIFY} | Você já está "
-                    "verificado e possui o cargo!"
-                ),
+                f"{EMOJI_VERIFY} | Você já está verificado e possui o cargo!",
                 ephemeral=True
             )
 
@@ -516,19 +510,14 @@ class VerificationView(discord.ui.LayoutView):
         if not cog:
 
             await interaction.followup.send(
-                (
-                    "❌ | Sistema temporariamente "
-                    "indisponível."
-                ),
+                "❌ | Sistema temporariamente indisponível.",
                 ephemeral=True
             )
 
             return
 
-        invites_count = (
-            await cog.get_user_invites(
-                member.id
-            )
+        invites_count = await cog.get_user_invites(
+            member.id
         )
 
         if invites_count >= 2:
@@ -540,41 +529,38 @@ class VerificationView(discord.ui.LayoutView):
                 )
 
                 await interaction.followup.send(
-                    (
-                        f"{EMOJI_VERIFY} | "
-                        "**Verificação concluída!** "
-                        f"Você convidou "
-                        f"{invites_count} pessoas "
-                        f"e recebeu o cargo "
-                        f"**{role.name}**."
-                    ),
+                    f"{EMOJI_VERIFY} | **Verificação concluída!** "
+                    f"Você convidou {invites_count} pessoas e recebeu "
+                    f"o cargo **{role.name}**.",
                     ephemeral=True
                 )
 
             except discord.Forbidden:
 
                 await interaction.followup.send(
-                    (
-                        "❌ | Eu não tenho "
-                        "permissão para gerenciar "
-                        "cargos. Verifique se meu "
-                        "cargo está acima do cargo "
-                        "de verificação na lista "
-                        "de cargos."
-                    ),
+                    "❌ | Eu não tenho permissão para gerenciar cargos. "
+                    "Verifique se meu cargo está acima do cargo "
+                    "de verificação na lista de cargos.",
+                    ephemeral=True
+                )
+
+            except Exception as e:
+
+                print(
+                    f"❌ Erro ao adicionar cargo: {e}"
+                )
+
+                await interaction.followup.send(
+                    "❌ | Não foi possível concluir a verificação.",
                     ephemeral=True
                 )
 
         else:
 
             await interaction.followup.send(
-                (
-                    "❌ | Você precisa de "
-                    "2 convites. No momento, "
-                    f"você tem apenas "
-                    f"**{invites_count}/2** "
-                    "convites validados."
-                ),
+                f"❌ | Você precisa de 2 convites. "
+                f"No momento, você tem apenas "
+                f"**{invites_count}/2** convites validados.",
                 ephemeral=True
             )
 
@@ -593,11 +579,7 @@ class VerificationView(discord.ui.LayoutView):
         ):
 
             await interaction.response.send_message(
-                (
-                    "❌ | Este sistema de "
-                    "verificação não funciona "
-                    "neste servidor."
-                ),
+                "❌ | Este sistema de verificação não funciona neste servidor.",
                 ephemeral=True
             )
 
@@ -610,27 +592,19 @@ class VerificationView(discord.ui.LayoutView):
         if not cog:
 
             await interaction.response.send_message(
-                (
-                    "❌ | Sistema temporariamente "
-                    "indisponível."
-                ),
+                "❌ | Sistema temporariamente indisponível.",
                 ephemeral=True
             )
 
             return
 
-        invites_count = (
-            await cog.get_user_invites(
-                interaction.user.id
-            )
+        invites_count = await cog.get_user_invites(
+            interaction.user.id
         )
 
         await interaction.response.send_message(
-            (
-                f"{EMOJI_CONVITE} | Você possui "
-                f"atualmente **{invites_count}** "
-                "convites validados."
-            ),
+            f"{EMOJI_CONVITE} | Você possui atualmente "
+            f"**{invites_count}** convites validados.",
             ephemeral=True
         )
 
@@ -649,11 +623,7 @@ class VerificationView(discord.ui.LayoutView):
         ):
 
             await interaction.response.send_message(
-                (
-                    "❌ | Este sistema de "
-                    "verificação não funciona "
-                    "neste servidor."
-                ),
+                "❌ | Este sistema de verificação não funciona neste servidor.",
                 ephemeral=True
             )
 
@@ -666,11 +636,7 @@ class VerificationView(discord.ui.LayoutView):
         if not cog:
 
             await interaction.response.send_message(
-                (
-                    f"{EMOJI_CONVITE} | ❌ "
-                    "Sistema temporariamente "
-                    "indisponível."
-                ),
+                f"{EMOJI_CONVITE} | ❌ Sistema temporariamente indisponível.",
                 ephemeral=True
             )
 
@@ -684,11 +650,12 @@ class VerificationView(discord.ui.LayoutView):
         # PROCURA NO CACHE
         # =================================================
 
-        for code, data in (
-            cog.invite_cache.items()
-        ):
+        for code, data in cog.invite_cache.items():
 
-            if data["inviter"] == user_id:
+            if (
+                data.get("inviter")
+                == user_id
+            ):
 
                 convite_existente = code
 
@@ -723,19 +690,15 @@ class VerificationView(discord.ui.LayoutView):
                         ] = {
                             "uses": invite.uses,
                             "inviter": user_id
-          }
+                        }
 
                         break
 
             except discord.Forbidden:
 
                 await interaction.response.send_message(
-                    (
-                        "❌ | Não consigo verificar "
-                        "seus convites existentes. "
-                        "Preciso da permissão "
-                        "**Gerenciar Servidor**."
-                    ),
+                    "❌ | Não consigo verificar seus convites existentes. "
+                    "Preciso da permissão **Gerenciar Servidor**.",
                     ephemeral=True
                 )
 
@@ -744,8 +707,8 @@ class VerificationView(discord.ui.LayoutView):
             except Exception as e:
 
                 print(
-                    "❌ Erro ao verificar "
-                    f"convites existentes: {e}"
+                    f"❌ Erro ao verificar convites existentes: "
+                    f"{e}"
                 )
 
         # =================================================
@@ -756,13 +719,10 @@ class VerificationView(discord.ui.LayoutView):
 
             await interaction.response.send_message(
                 content=(
-                    "⚠️ | Você já possui "
-                    "um convite criado! "
-                    "Use o seu link:\n"
-                    f"`https://discord.gg/"
-                    f"{convite_existente}`\n"
-                    "(BASTA CLICAR NO NOME "
-                    "PRETO PARA COPIAR)"
+                    f"⚠️ | Você já possui um convite criado! "
+                    f"Use o seu link:\n"
+                    f"`https://discord.gg/{convite_existente}`\n"
+                    f"(BASTA CLICAR NO NOME PRETO PARA COPIAR)"
                 ),
                 ephemeral=True
             )
@@ -795,26 +755,18 @@ class VerificationView(discord.ui.LayoutView):
             }
 
             await interaction.response.send_message(
-                (
-                    "🔗 | Aqui está o seu "
-                    "convite exclusivo:\n"
-                    f"`{invite.url}`\n"
-                    "(BASTA CLICAR NO NOME "
-                    "PRETO PARA COPIAR)"
-                ),
+                f"🔗 | Aqui está o seu convite exclusivo:\n"
+                f"`{invite.url}`\n"
+                f"(BASTA CLICAR NO NOME PRETO PARA COPIAR)",
                 ephemeral=True
             )
 
         except discord.Forbidden:
 
             await interaction.response.send_message(
-                (
-                    "❌ | Não consegui criar "
-                    "um convite neste canal. "
-                    "Certifique-se de que eu "
-                    "tenho permissão para "
-                    "**Criar Convites**."
-                ),
+                "❌ | Não consegui criar um convite neste canal. "
+                "Certifique-se de que eu tenho permissão para "
+                "**Criar Convites**.",
                 ephemeral=True
             )
 
@@ -825,18 +777,18 @@ class VerificationView(discord.ui.LayoutView):
             )
 
             await interaction.response.send_message(
-                (
-                    "❌ | Não consegui "
-                    "criar o convite."
-                ),
+                "❌ | Não consegui criar o convite.",
                 ephemeral=True
-)
+            )
+
 
 # =========================================================
 # COG
 # =========================================================
 
-class Verification(commands.Cog):
+class Verification(
+    commands.Cog
+):
 
     def __init__(
         self,
@@ -845,10 +797,7 @@ class Verification(commands.Cog):
 
         self.bot = bot
 
-        # =================================================
-        # CACHE DOS CONVITES DO SERVIDOR
-        # =================================================
-
+        # Cache apenas dos convites do servidor configurado.
         self.invite_cache = {}
 
     # =====================================================
@@ -866,7 +815,9 @@ class Verification(commands.Cog):
                 "verification_invites"
             ].find_one(
                 {
-                    "user_id": str(user_id)
+                    "user_id": str(
+                        user_id
+                    )
                 }
             )
 
@@ -880,8 +831,8 @@ class Verification(commands.Cog):
         except Exception as e:
 
             print(
-                "❌ Erro ao buscar convites "
-                f"no MongoDB: {e}"
+                f"❌ Erro ao buscar convites no MongoDB: "
+                f"{e}"
             )
 
         return 0
@@ -902,26 +853,30 @@ class Verification(commands.Cog):
                 "verification_invites"
             ].update_one(
                 {
-                    "user_id": str(user_id)
+                    "user_id": str(
+                        user_id
+                    )
                 },
                 {
                     "$inc": {
-                        "invites_count": increment_value
+                        "invites_count":
+                            increment_value
                     }
                 },
                 upsert=True
             )
 
             print(
-                f"💾 Banco Atualizado: {user_id} "
-                f"modificado em {increment_value} pontos."
+                f"💾 Banco Atualizado: "
+                f"{user_id} modificado em "
+                f"{increment_value} pontos."
             )
 
         except Exception as e:
 
             print(
-                "❌ Erro ao atualizar convites "
-                f"no MongoDB: {e}"
+                f"❌ Erro ao atualizar convites no MongoDB: "
+                f"{e}"
             )
 
     # =====================================================
@@ -939,7 +894,9 @@ class Verification(commands.Cog):
                 "verification_referrals"
             ].find_one(
                 {
-                    "member_id": str(member_id)
+                    "member_id": str(
+                        member_id
+                    )
                 }
             )
 
@@ -952,8 +909,8 @@ class Verification(commands.Cog):
         except Exception as e:
 
             print(
-                "❌ Erro ao buscar indicação "
-                f"no MongoDB: {e}"
+                f"❌ Erro ao buscar indicação no MongoDB: "
+                f"{e}"
             )
 
         return None
@@ -974,18 +931,22 @@ class Verification(commands.Cog):
                 "verification_referrals"
             ].update_one(
                 {
-                    "member_id": str(member_id)
+                    "member_id": str(
+                        member_id
+                    )
                 },
                 {
                     "$set": {
-                        "inviter_id": str(inviter_id)
+                        "inviter_id": str(
+                            inviter_id
+                        )
                     }
                 },
                 upsert=True
             )
 
             print(
-                "💾 Indicação Registrada: "
+                f"💾 Indicação Registrada: "
                 f"Membro {member_id} "
                 f"convidado por {inviter_id}"
             )
@@ -993,8 +954,8 @@ class Verification(commands.Cog):
         except Exception as e:
 
             print(
-                "❌ Erro ao definir indicação "
-                f"no MongoDB: {e}"
+                f"❌ Erro ao definir indicação no MongoDB: "
+                f"{e}"
             )
 
     # =====================================================
@@ -1012,7 +973,9 @@ class Verification(commands.Cog):
                 "verification_referrals"
             ].find_one_and_delete(
                 {
-                    "member_id": str(member_id)
+                    "member_id": str(
+                        member_id
+                    )
                 }
             )
 
@@ -1025,8 +988,8 @@ class Verification(commands.Cog):
         except Exception as e:
 
             print(
-                "❌ Erro ao remover indicação "
-                f"no MongoDB: {e}"
+                f"❌ Erro ao remover indicação no MongoDB: "
+                f"{e}"
             )
 
         return None
@@ -1039,20 +1002,14 @@ class Verification(commands.Cog):
         self
     ):
 
-        # =================================================
-        # REGISTRA A VIEW COMO PERSISTENTE
-        # =================================================
-
+        # View persistente
         self.bot.add_view(
             VerificationView(
                 self.bot
             )
         )
 
-        # =================================================
-        # CARREGA OS CONVITES DO SERVIDOR
-        # =================================================
-
+        # Carrega os convites depois que o bot estiver pronto.
         self.bot.loop.create_task(
             self.load_all_invites()
         )
@@ -1074,16 +1031,15 @@ class Verification(commands.Cog):
         if not guild:
 
             print(
-                f"❌ Servidor com ID "
-                f"{GUILD_ID} não encontrado."
+                f"❌ Servidor com ID {GUILD_ID} "
+                f"não encontrado."
             )
 
             return
 
         print(
-            "🔄 Carregando convites apenas "
-            f"do servidor: {guild.name} "
-            f"({guild.id})..."
+            f"🔄 Carregando convites apenas do servidor: "
+            f"{guild.name} ({guild.id})..."
         )
 
         try:
@@ -1100,29 +1056,28 @@ class Verification(commands.Cog):
                         invite.code
                     ] = {
                         "uses": invite.uses,
-                        "inviter": invite.inviter.id
+                        "inviter":
+                            invite.inviter.id
                     }
 
             print(
-                "✅ Cache populado: "
+                f"✅ Cache populado: "
                 f"{len(invites)} convites."
             )
 
         except discord.Forbidden:
 
             print(
-                "❌ Sem permissão para ler "
-                f"os convites do servidor "
-                f"{guild.name}."
+                f"❌ Sem permissão para ler os convites "
+                f"do servidor {guild.name}."
             )
 
         except Exception as e:
 
             print(
                 f"❌ Erro ao carregar convites: {e}"
-            )
-
-    # =====================================================
+                )
+                # =====================================================
     # READY
     # =====================================================
 
@@ -1137,15 +1092,15 @@ class Verification(commands.Cog):
 
             print(
                 "🚀 [Verification] Comando "
-                "/setup_verificacao "
-                "sincronizado com sucesso!"
+                "/setup_verificacao sincronizado "
+                "com sucesso!"
             )
 
         except Exception as e:
 
             print(
-                "❌ Erro ao sincronizar "
-                f"comandos automaticamente: {e}"
+                f"❌ Erro ao sincronizar comandos "
+                f"automaticamente: {e}"
             )
 
     # =====================================================
@@ -1160,7 +1115,8 @@ class Verification(commands.Cog):
 
         if (
             invite.guild
-            and invite.guild.id != GUILD_ID
+            and invite.guild.id
+            != GUILD_ID
         ):
 
             return
@@ -1171,14 +1127,9 @@ class Verification(commands.Cog):
                 invite.code
             ] = {
                 "uses": invite.uses,
-                "inviter": invite.inviter.id
+                "inviter":
+                    invite.inviter.id
             }
-
-            print(
-                "🔗 Novo convite registrado: "
-                f"{invite.code} "
-                f"→ {invite.inviter}"
-            )
 
     # =====================================================
     # CONVITE DELETADO
@@ -1192,7 +1143,8 @@ class Verification(commands.Cog):
 
         if (
             invite.guild
-            and invite.guild.id != GUILD_ID
+            and invite.guild.id
+            != GUILD_ID
         ):
 
             return
@@ -1200,11 +1152,6 @@ class Verification(commands.Cog):
         self.invite_cache.pop(
             invite.code,
             None
-        )
-
-        print(
-            f"🗑️ Convite removido do cache: "
-            f"{invite.code}"
         )
 
     # =====================================================
@@ -1218,23 +1165,20 @@ class Verification(commands.Cog):
     ):
 
         if member.guild.id != GUILD_ID:
-
             return
 
         print(
-            "👤 Membro entrou: "
+            f"👤 Membro entrou: "
             f"{member.name} ({member.id})"
         )
 
         try:
 
-            # =================================================
-            # BUSCA OS CONVITES ATUAIS
-            # =================================================
-
             current_invites = (
                 await member.guild.invites()
             )
+
+            convite_usado = None
 
             # =================================================
             # PROCURA QUAL CONVITE AUMENTOU
@@ -1249,123 +1193,135 @@ class Verification(commands.Cog):
                 )
 
                 if not cached:
+                    continue
 
-                    # Convite que apareceu depois
-                    # do último carregamento.
-                    if invite.inviter:
+                if (
+                    invite.uses
+                    > cached["uses"]
+                ):
+
+                    convite_usado = invite
+                    break
+
+            # =================================================
+            # NENHUM CONVITE IDENTIFICADO
+            # =================================================
+
+            if convite_usado is None:
+
+                # Atualiza somente os convites já conhecidos.
+                for invite in current_invites:
+
+                    if invite.code in self.invite_cache:
 
                         self.invite_cache[
                             invite.code
-                        ] = {
-                            "uses": invite.uses,
-                            "inviter": (
-                                invite.inviter.id
-                            )
-                        }
+                        ]["uses"] = invite.uses
 
-                    continue
+                return
 
-                # =================================================
-                # DETECTA AUMENTO DE USOS
-                # =================================================
+            invite = convite_usado
 
-                if invite.uses <= cached["uses"]:
+            inviter_id = str(
+                self.invite_cache[
+                    invite.code
+                ]["inviter"]
+            )
 
-                    continue
+            member_id = str(
+                member.id
+            )
 
-                inviter_id = str(
-                    cached["inviter"]
+            # =================================================
+            # IMPEDE AUTO-CONVITE
+            # =================================================
+
+            if inviter_id == member_id:
+
+                print(
+                    f"⚠️ {member.name} tentou entrar "
+                    f"usando o próprio convite. Ignorando."
                 )
-
-                member_id = str(
-                    member.id
-                )
-
-                # =================================================
-                # ATUALIZA PRIMEIRO O CACHE
-                # =================================================
 
                 self.invite_cache[
                     invite.code
                 ]["uses"] = invite.uses
 
-                # =================================================
-                # IMPEDE AUTO-CONVITE
-                # =================================================
+                return
 
-                if inviter_id == member_id:
+            # =================================================
+            # IMPEDE DUPLICAÇÃO
+            # =================================================
 
-                    print(
-                        f"⚠️ {member.name} tentou "
-                        "entrar usando o próprio "
-                        "convite. Ignorando."
-                    )
-
-                    break
-
-                # =================================================
-                # VERIFICA SE JÁ POSSUI INDICAÇÃO
-                # =================================================
-
-                ja_indicado = (
-                    await self.get_referred_by(
-                        member_id
-                    )
+            ja_indicado = (
+                await self.get_referred_by(
+                    member_id
                 )
+            )
 
-                if ja_indicado:
-
-                    print(
-                        f"⚠️ {member.name} já possui "
-                        "uma indicação registrada. "
-                        "Ignorando duplicação."
-                    )
-
-                    break
-
-                # =================================================
-                # CONVITE ENCONTRADO
-                # =================================================
+            if ja_indicado:
 
                 print(
-                    "🎉 Convite correspondido! "
-                    f"{member.name} entrou usando "
-                    f"o convite de {inviter_id}."
+                    f"⚠️ {member.name} já possui uma "
+                    f"indicação registrada. Ignorando duplicação."
                 )
 
-                # =================================================
-                # SALVA A INDICAÇÃO
-                # =================================================
+                self.invite_cache[
+                    invite.code
+                ]["uses"] = invite.uses
 
-                await self.set_referred_by(
-                    member_id,
-                    inviter_id
-                )
+                return
 
-                # =================================================
-                # ADICIONA 1 CONVITE AO USUÁRIO
-                # =================================================
+            # =================================================
+            # REGISTRA NOVA INDICAÇÃO
+            # =================================================
 
-                await self.update_user_invites(
-                    inviter_id,
-                    1
-                )
+            print(
+                f"🎉 Convite correspondido! "
+                f"{member.name} entrou usando "
+                f"o convite de {inviter_id}."
+            )
 
-                break
+            await self.set_referred_by(
+                member_id,
+                inviter_id
+            )
+
+            await self.update_user_invites(
+                inviter_id,
+                1
+            )
+
+            self.invite_cache[
+                invite.code
+            ]["uses"] = invite.uses
+
+            # Sincroniza os demais convites.
+            for current_invite in current_invites:
+
+                if (
+                    current_invite.code
+                    in self.invite_cache
+                ):
+
+                    self.invite_cache[
+                        current_invite.code
+                    ]["uses"] = (
+                        current_invite.uses
+                    )
 
         except discord.Forbidden:
 
             print(
-                "❌ Sem permissão para ler "
-                "convites no evento de entrada "
-                f"de {member.name}."
+                f"❌ Sem permissão para ler convites "
+                f"no evento de entrada de {member.name}."
             )
 
         except Exception as e:
 
             print(
-                "❌ Erro no processamento do "
-                f"evento on_member_join: {e}"
+                f"❌ Erro no processamento do evento "
+                f"on_member_join: {e}"
             )
 
     # =====================================================
@@ -1379,7 +1335,6 @@ class Verification(commands.Cog):
     ):
 
         if member.guild.id != GUILD_ID:
-
             return
 
         inviter_id = (
@@ -1396,10 +1351,8 @@ class Verification(commands.Cog):
             )
 
             print(
-                f"📉 Membro {member.name} "
-                "saiu do servidor. "
-                f"1 convite removido de "
-                f"{inviter_id}."
+                f"📉 Membro {member.name} saiu do servidor. "
+                f"1 convite removido de {inviter_id}."
             )
 
     # =====================================================
@@ -1424,10 +1377,8 @@ class Verification(commands.Cog):
         if interaction.guild_id != GUILD_ID:
 
             await interaction.response.send_message(
-                (
-                    "❌ | Este comando não pode "
-                    "ser executado neste servidor."
-                ),
+                "❌ | Este comando não pode ser "
+                "executado neste servidor.",
                 ephemeral=True
             )
 
@@ -1441,33 +1392,66 @@ class Verification(commands.Cog):
 
         if not channel:
 
+            try:
+
+                channel = (
+                    await interaction.guild.fetch_channel(
+                        CHANNEL_ID
+                    )
+                )
+
+            except Exception:
+
+                channel = None
+
+        if not channel:
+
             await interaction.response.send_message(
-                (
-                    f"❌ | Canal com ID "
-                    f"`{CHANNEL_ID}` não foi "
-                    "encontrado."
-                ),
+                f"❌ | Canal com ID `{CHANNEL_ID}` "
+                f"não foi encontrado.",
                 ephemeral=True
             )
 
             return
 
-        view = VerificationView(
-            self.bot
-        )
+        try:
 
-        await channel.send(
-            view=view
-        )
+            # A URL está no formato permanente do CDN,
+            # evitando os parâmetros expirados da URL original.
+            view = VerificationView(
+                self.bot
+            )
 
-        await interaction.response.send_message(
-            (
-                "✅ | Painel de verificação "
-                "enviado com sucesso em "
-                f"{channel.mention}!"
-            ),
-            ephemeral=True
-    )
+            await channel.send(
+                view=view
+            )
+
+            await interaction.response.send_message(
+                f"✅ | Painel de verificação enviado "
+                f"com sucesso em {channel.mention}!",
+                ephemeral=True
+            )
+
+        except discord.Forbidden:
+
+            await interaction.response.send_message(
+                "❌ | Não tenho permissão para enviar "
+                "o painel nesse canal.",
+                ephemeral=True
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao enviar painel: {e}"
+            )
+
+            await interaction.response.send_message(
+                "❌ | Não foi possível enviar o "
+                "painel de verificação.",
+                ephemeral=True
+            )
+
 
 # =========================================================
 # SETUP DA COG
@@ -1481,4 +1465,4 @@ async def setup(
         Verification(
             bot
         )
-        )
+            )
