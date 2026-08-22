@@ -717,7 +717,401 @@ class Verification(commands.Cog):
 
             self.bot.db[
                 "verification_invites"
-                # =====================================================
+            ].update_one(
+                {
+                    "user_id": str(user_id)
+                },
+                {
+                    "$inc": {
+                        "invites_count": increment_value
+                    }
+                },
+                upsert=True
+            )
+
+            print(
+                f"💾 Banco Atualizado: {user_id} "
+                f"modificado em {increment_value} pontos."
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao atualizar convites no MongoDB: {e}"
+            )
+
+    # =====================================================
+    # BUSCAR INDICAÇÃO
+    # =====================================================
+
+    async def get_referred_by(
+        self,
+        member_id
+    ):
+
+        try:
+
+            data = self.bot.db[
+                "verification_referrals"
+            ].find_one(
+                {
+                    "member_id": str(member_id)
+                }
+            )
+
+            if data:
+
+                return data.get(
+                    "inviter_id"
+                )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao buscar indicação no MongoDB: {e}"
+            )
+
+        return None
+
+    # =====================================================
+    # SALVAR INDICAÇÃO
+    # =====================================================
+
+    async def set_referred_by(
+        self,
+        member_id,
+        inviter_id
+    ):
+
+        try:
+
+            self.bot.db[
+                "verification_referrals"
+            ].update_one(
+                {
+                    "member_id": str(member_id)
+                },
+                {
+                    "$set": {
+                        "inviter_id": str(inviter_id)
+                    }
+                },
+                upsert=True
+            )
+
+            print(
+                f"💾 Indicação Registrada: "
+                f"Membro {member_id} "
+                f"convidado por {inviter_id}"
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao definir indicação no MongoDB: {e}"
+            )
+
+    # =====================================================
+    # REMOVER INDICAÇÃO
+    # =====================================================
+
+    async def remove_referred_by(
+        self,
+        member_id
+    ):
+
+        try:
+
+            data = self.bot.db[
+                "verification_referrals"
+            ].find_one_and_delete(
+                {
+                    "member_id": str(member_id)
+                }
+            )
+
+            if data:
+
+                return data.get(
+                    "inviter_id"
+                )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao remover indicação no MongoDB: {e}"
+            )
+
+        return None
+
+    # =====================================================
+    # INICIALIZAÇÃO
+    # =====================================================
+
+    async def cog_load(
+        self
+    ):
+
+        # View persistente
+        self.bot.add_view(
+            VerificationView(
+                self.bot
+            )
+        )
+
+        self.bot.loop.create_task(
+            self.load_all_invites()
+        )
+
+    # =====================================================
+    # CARREGAR CONVITES DO SERVIDOR
+    # =====================================================
+
+    async def load_all_invites(
+        self
+    ):
+
+        await self.bot.wait_until_ready()
+
+        guild = self.bot.get_guild(
+            GUILD_ID
+        )
+
+        if not guild:
+
+            print(
+                f"❌ Servidor com ID {GUILD_ID} não encontrado."
+            )
+
+            return
+
+        print(
+            f"🔄 Carregando convites apenas do servidor: "
+            f"{guild.name} ({guild.id})..."
+        )
+
+        try:
+
+            invites = await guild.invites()
+
+            for invite in invites:
+
+                if invite.inviter:
+
+                    self.invite_cache[
+                        invite.code
+                    ] = {
+                        "uses": invite.uses,
+                        "inviter": invite.inviter.id
+                    }
+
+            print(
+                f"✅ Cache populado: "
+                f"{len(invites)} convites."
+            )
+
+        except discord.Forbidden:
+
+            print(
+                f"❌ Sem permissão para ler os convites "
+                f"do servidor {guild.name}."
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao carregar convites: {e}"
+            )
+
+    # =====================================================
+    # READY
+    # =====================================================
+
+    @commands.Cog.listener()
+    async def on_ready(
+        self
+    ):
+
+        try:
+
+            await self.bot.tree.sync()
+
+            print(
+                "🚀 [Verification] Comando "
+                "/setup_verificacao sincronizado com sucesso!"
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro ao sincronizar comandos automaticamente: {e}"
+            )
+
+    # =====================================================
+    # CONVITE CRIADO
+    # =====================================================
+
+    @commands.Cog.listener()
+    async def on_invite_create(
+        self,
+        invite
+    ):
+
+        if (
+            invite.guild
+            and invite.guild.id != GUILD_ID
+        ):
+
+            return
+
+        if invite.inviter:
+
+            self.invite_cache[
+                invite.code
+            ] = {
+                "uses": invite.uses,
+                "inviter": invite.inviter.id
+            }
+
+    # =====================================================
+    # CONVITE DELETADO
+    # =====================================================
+
+    @commands.Cog.listener()
+    async def on_invite_delete(
+        self,
+        invite
+    ):
+
+        if (
+            invite.guild
+            and invite.guild.id != GUILD_ID
+        ):
+
+            return
+
+        self.invite_cache.pop(
+            invite.code,
+            None
+        )
+
+    # =====================================================
+    # MEMBRO ENTROU
+    # =====================================================
+
+    @commands.Cog.listener()
+    async def on_member_join(
+        self,
+        member
+    ):
+
+        if member.guild.id != GUILD_ID:
+
+            return
+
+        print(
+            f"👤 Membro entrou: "
+            f"{member.name} ({member.id})"
+        )
+
+        try:
+
+            current_invites = await member.guild.invites()
+
+            for invite in current_invites:
+
+                cached = self.invite_cache.get(
+                    invite.code
+                )
+
+                if (
+                    cached
+                    and invite.uses > cached["uses"]
+                ):
+
+                    inviter_id = str(
+                        cached["inviter"]
+                    )
+
+                    member_id = str(
+                        member.id
+                    )
+
+                    # =================================================
+                    # IMPEDE AUTO-CONVITE
+                    # =================================================
+
+                    if inviter_id == member_id:
+
+                        print(
+                            f"⚠️ {member.name} tentou entrar "
+                            f"usando o próprio convite. Ignorando."
+                        )
+
+                        self.invite_cache[
+                            invite.code
+                        ]["uses"] = invite.uses
+
+                        break
+
+                    # =================================================
+                    # IMPEDE DUPLICAÇÃO
+                    # =================================================
+
+                    ja_indicado = await self.get_referred_by(
+                        member_id
+                    )
+
+                    if ja_indicado:
+
+                        print(
+                            f"⚠️ {member.name} já possui uma "
+                            f"indicação registrada. Ignorando duplicação."
+                        )
+
+                        self.invite_cache[
+                            invite.code
+                        ]["uses"] = invite.uses
+
+                        break
+
+                    print(
+                        f"🎉 Convite correspondido! "
+                        f"{member.name} entrou usando "
+                        f"o convite de {inviter_id}."
+                    )
+
+                    await self.set_referred_by(
+                        member_id,
+                        inviter_id
+                    )
+
+                    await self.update_user_invites(
+                        inviter_id,
+                        1
+                    )
+
+                    self.invite_cache[
+                        invite.code
+                    ]["uses"] = invite.uses
+
+                    break
+
+        except discord.Forbidden:
+
+            print(
+                f"❌ Sem permissão para ler convites "
+                f"no evento de entrada de {member.name}."
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ Erro no processamento do evento "
+                f"on_member_join: {e}"
+)
+            
+            # =====================================================
     # MEMBRO SAIU
     # =====================================================
 
@@ -811,4 +1205,4 @@ async def setup(
         Verification(
             bot
         )
-)
+            )
