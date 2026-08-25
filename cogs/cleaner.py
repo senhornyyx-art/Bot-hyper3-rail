@@ -95,7 +95,7 @@ class Cleaner(commands.Cog):
 
     # ---------------- COMANDOS ----------------
 
-    @commands.command(name="setcleaner")
+    @commands.command(name="cleaner")
     @commands.has_permissions(administrator=True)
     async def set_cleaner(self, ctx, canal: discord.TextChannel):
         data = load_config()
@@ -113,7 +113,7 @@ class Cleaner(commands.Cog):
 
         await ctx.reply(f"✅ Canal {canal.mention} configurado para o Cleaner.")
 
-    @commands.command(name="removecleaner")
+    @commands.command(name="uncleaner")
     @commands.has_permissions(administrator=True)
     async def remove_cleaner(self, ctx, canal: discord.TextChannel):
         data = load_config()
